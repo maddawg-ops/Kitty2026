@@ -34,7 +34,7 @@ button{cursor:pointer;background:none;border:0;padding:0}
 :focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:8px}
 h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.025em;line-height:1.1}
 .hidden{display:none !important}
-input[type=text],input[type=password],input[type=date],select,textarea{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;width:100%;transition:box-shadow .15s}
+input[type=text],input[type=password],input[type=date],select,textarea{font-size:16px;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;width:100%;transition:box-shadow .15s}
 input:focus,select:focus,textarea:focus{outline:none;box-shadow:0 0 0 3px var(--blue-soft)}
 textarea{min-height:96px;resize:vertical}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;background:var(--blue);color:#fff;border-radius:999px;padding:11px 20px;font-weight:600;font-size:15px;transition:transform .12s,opacity .12s}
@@ -45,6 +45,11 @@ textarea{min-height:96px;resize:vertical}
 .btn:disabled{opacity:.45;cursor:default}
 .msg{font-size:13px;color:var(--ink2);min-height:18px;margin-top:8px}
 .msg.err{color:var(--red)}
+.back{display:inline-flex;align-items:center;gap:2px;color:var(--blue);font-weight:500;font-size:16px;padding:6px 0}
+.back::before{content:"";width:9px;height:9px;border:solid var(--blue);border-width:0 0 2px 2px;transform:rotate(45deg);margin-right:4px}
+.sheet-head{display:flex;justify-content:space-between;align-items:center;margin:-4px 0 10px}
+.sheet-head .done{color:var(--blue);font-weight:600;font-size:16px;padding:6px 0}
+.signout{display:block;margin:28px auto 0;color:var(--ink2);font-size:14px}
 
 /* Full-screen panels (gate + who are you) */
 .panel{min-height:100%;display:grid;place-items:center;padding:28px 20px}
@@ -173,7 +178,7 @@ main{max-width:880px;margin:0 auto;padding:40px 20px 120px}
   </div>
 </div>
 
-<div id="who" class="panel hidden"><div class="panel-in"><h1>Who are you?</h1><p>Your notes and logs will be signed with this name.</p><div class="who" id="who-list"></div></div></div>
+<div id="who" class="panel hidden"><div class="panel-in"><div id="who-back-wrap" style="text-align:left;margin-bottom:10px"></div><h1>Who are you?</h1><p>Your notes and logs will be signed with this name.</p><div class="who" id="who-list"></div></div></div>
 
 <div id="app" class="hidden">
   <div class="nav"><div class="nav-in">
@@ -287,20 +292,20 @@ const errMsg=e=>e&&e.code==="unauthorized"?"Password changed. Reload and sign in
 async function unlock(){
   const b=document.getElementById("unlock"),err=document.getElementById("gate-err"); b.disabled=true; err.textContent="";
   store.key=document.getElementById("pw").value;
-  try{ await store.req("GET","state"); try{sessionStorage.setItem("ql_key",store.key)}catch(e){} boot(); }
+  try{ await store.req("GET","state"); try{localStorage.setItem("ql_key",store.key)}catch(e){} boot(); }
   catch(e){ err.textContent=e.code==="unauthorized"?"That’s not it.":"Can’t reach the server. Try again."; }
   b.disabled=false;
 }
 document.getElementById("unlock").onclick=unlock;
 document.getElementById("pw").addEventListener("keydown",e=>{if(e.key==="Enter")unlock();});
-try{ const k=sessionStorage.getItem("ql_key"); if(k){store.key=k;boot();} }catch(e){}
+try{ const k=localStorage.getItem("ql_key"); if(k){store.key=k;boot();} }catch(e){}
 
 let booted=false;
 function boot(){
   if(booted)return; booted=true;
   document.getElementById("gate").classList.add("hidden");
   if(!M(me)) showWho(); else showApp();
-  store.connect((c,s)=>{ if(c==="error"){ if(s.code==="unauthorized"){try{sessionStorage.removeItem("ql_key")}catch(e){} location.reload(); return;} if(!banner){banner="Can’t reach the server right now; showing what was last loaded."; render();} return;}
+  store.connect((c,s)=>{ if(c==="error"){ if(s.code==="unauthorized"){try{localStorage.removeItem("ql_key")}catch(e){} location.reload(); return;} if(!banner){banner="Can’t reach the server right now; showing what was last loaded."; render();} return;}
     const sig=JSON.stringify(s); const changed=sig!==lastSig; lastSig=sig;
     logs=s.logs||{}; notes=s.notes||{}; loaded=true; const hadBanner=!!banner; banner="";
     if(changed||hadBanner) render(); });
@@ -309,7 +314,10 @@ function boot(){
 function showWho(){
   document.getElementById("app").classList.add("hidden");
   const w=document.getElementById("who"); w.classList.remove("hidden");
-  document.getElementById("who-list").innerHTML=Object.keys(GROUPS).map(g=>'<h3>Group '+g+'</h3><div class="list">'+GROUPS[g].map(n=>'<button data-pick="'+slug(n)+'"><span class="av" style="--c:'+color(slug(n))+'">'+initials(n)+'</span>'+esc(n)+'</button>').join("")+'</div>').join("");
+  document.getElementById("who-back-wrap").innerHTML=M(me)?'<button class="back" id="who-back">Back</button>':"";
+  const wb=document.getElementById("who-back"); if(wb) wb.onclick=showApp;
+  document.getElementById("who-list").innerHTML=Object.keys(GROUPS).map(g=>'<h3>Group '+g+'</h3><div class="list">'+GROUPS[g].map(n=>'<button data-pick="'+slug(n)+'"><span class="av" style="--c:'+color(slug(n))+'">'+initials(n)+'</span>'+esc(n)+'</button>').join("")+'</div>').join("")+'<button class="signout" id="signout">Sign out of this device</button>';
+  document.getElementById("signout").onclick=()=>{if(confirm("Sign out? You’ll need the password again."))try{localStorage.removeItem("ql_key");localStorage.removeItem("ql_me");}catch(e){}finally{location.reload();}};
   w.querySelectorAll("[data-pick]").forEach(b=>b.onclick=()=>{me=b.dataset.pick;localStorage.setItem("ql_me",me);viewGroup=null;showApp();});
 }
 function showApp(){ document.getElementById("who").classList.add("hidden"); document.getElementById("app").classList.remove("hidden"); render(); }
@@ -361,7 +369,7 @@ function viewProgress(){
   h+='<div class="rings">'+Object.keys(GROUPS).map(k=>{const st=stats(+k);return '<button class="ring'+(+k===g?" on":"")+'" data-group="'+k+'">'+ringSVG(st.done,36,+k===myGroup())+'<div class="l">Group '+k+'</div><div class="s">'+st.done+' of 36</div></button>';}).join("")+'</div>';
   const need=Math.max(CP_N-s.done,0);
   h+='<div class="gtitle"><h2>Group '+g+(mine?" · yours":"")+'</h2><div class="pace">'+(dc>0?(need?'<b>'+need+' more</b> in '+dc+' day'+(dc===1?"":"s")+' to make the checkpoint':'<b>Checkpoint made.</b> '+df+' days to the lunch'):'<b>'+(36-s.done)+' left</b> · '+Math.max(df,0)+' days to the lunch')+'</div></div>';
-  if(!mine) h+='<div class="lock">You’re viewing Group '+g+'. Only its members can log tasks here; you can still read and add notes.</div>';
+  if(!mine) h+='<div class="lock"><button class="back" data-group="'+(myGroup()||1)+'" style="font-size:14px;padding:0">Back to your group</button><div>You’re viewing Group '+g+'. Only its members can log tasks here; you can still read and add notes.</div></div>';
   const sect=(title,arr)=>'<div class="sect">'+title+'</div><div class="list">'+arr.map(t=>{const l=logs[key(g,t.id)]||{};const nn=notesFor(t.id).length;const r=[];if(nn)r.push('<span class="nn">'+nn+' note'+(nn===1?"":"s")+'</span>');if(l.done)r.push(fmt(l.date)+(l.photo?" · photo":""));
     return '<button class="row'+(l.done?" done":"")+'" data-open="'+t.id+'" data-g="'+g+'"><span class="chk"></span><span><div class="t">'+label(t)+'. '+esc(t.title)+'</div>'+(l.done&&l.by?.length?'<div class="m">'+l.by.map(id=>M(id)?short(M(id).name).split(" ")[0]:"").filter(Boolean).join(", ")+'</div>':"")+'</span><span class="r">'+r.join("<br>")+'</span></button>';}).join("")+'</div>';
   h+=sect("Physical Quest · "+s.done+" of 36",PHYSICAL)+sect("Intellectual Quest · "+s.intel+" of "+INTELLECTUAL.length,INTELLECTUAL);
@@ -369,13 +377,15 @@ function viewProgress(){
 }
 
 /* sheet */
-function openSheet(tid,g){ sheet={tid,g:+g||myGroup()||1}; renderSheet(); }
-function closeSheet(){ sheet=null; document.getElementById("sheet-root").innerHTML=""; }
+let sheetPushed=false;
+function openSheet(tid,g){ sheet={tid,g:+g||myGroup()||1}; if(!sheetPushed){ try{history.pushState({ql:"sheet"},"");sheetPushed=true;}catch(e){} } renderSheet(); }
+function closeSheet(fromPop){ sheet=null; document.getElementById("sheet-root").innerHTML=""; if(!fromPop&&sheetPushed){ sheetPushed=false; history.back(); } }
+window.addEventListener("popstate",()=>{ if(sheet){ sheetPushed=false; closeSheet(true); } });
 function renderSheet(){
   const t=T(sheet.tid); if(!t){closeSheet();return;}
   const g=sheet.g, l=logs[key(g,t.id)]||{}, mine=g===myGroup(), nn=notesFor(t.id);
   const by=new Set(l.by||(mine?[me]:[]));
-  let h='<div class="sheet-bg" data-bg><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div><div class="num">'+(t.scope==="physical"?"Task "+t.n:"Intellectual Quest "+t.n)+' · Group '+g+'</div><h2>'+esc(t.title)+'</h2><p class="desc">'+esc(t.desc)+'</p>';
+  let h='<div class="sheet-bg" data-bg><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div><div class="sheet-head"><button class="back" id="s-back">Back</button><button class="done" id="s-done">Done</button></div><div class="num">'+(t.scope==="physical"?"Task "+t.n:"Intellectual Quest "+t.n)+' · Group '+g+'</div><h2>'+esc(t.title)+'</h2><p class="desc">'+esc(t.desc)+'</p>';
   h+='<div class="card"><h3>Notes'+(nn.length?" · "+nn.length:"")+'</h3>'+(nn.length?nn.map(n=>{const w=M(n.by);return '<div class="snote"><div class="w"><b>'+(w?esc(short(w.name)):"Unsigned")+'</b>'+(w?" · Group "+w.group:"")+' · '+fmt(n.createdAt)+'</div><div class="b">'+esc(n.text)+'</div></div>';}).join(""):'<div class="state">No notes on this one yet.</div>')+
      '<div class="mini"><textarea id="s-note" placeholder="Add a note as '+esc(short(M(me).name))+'…"></textarea><button class="btn" id="s-post">Post</button></div><div class="msg" id="s-msg"></div></div>';
   if(mine){
@@ -390,6 +400,7 @@ function renderSheet(){
   const root=document.getElementById("sheet-root"); const keepNote=root.querySelector("#s-note")?.value||"", keepCap=root.querySelector("#s-cap")?.value; root.innerHTML=h;
   if(keepNote){root.querySelector("#s-note").value=keepNote;} if(keepCap!==undefined&&root.querySelector("#s-cap")){root.querySelector("#s-cap").value=keepCap;}
   root.querySelector("[data-bg]").onclick=e=>{if(e.target.hasAttribute("data-bg"))closeSheet();};
+  root.querySelector("#s-back").onclick=()=>closeSheet(); root.querySelector("#s-done").onclick=()=>closeSheet();
   root.querySelectorAll("[data-chip]").forEach(c=>c.onclick=()=>c.classList.toggle("on"));
   const sw=root.querySelector("#s-photo"); if(sw) sw.onclick=()=>{sw.classList.toggle("on");sw.setAttribute("aria-checked",sw.classList.contains("on"));};
   root.querySelector("#s-post").onclick=async()=>{const ta=root.querySelector("#s-note"),msg=root.querySelector("#s-msg");const ok=await postNote(t.id,ta.value.trim(),msg);if(ok)ta.value="";};
