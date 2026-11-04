@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Quest</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  color-scheme:light;
+  --bg:#F5F5F7; --card:#FFFFFF; --card2:#FFFFFF; --ink:#1D1D1F; --ink2:#6E6E73; --ink3:#AEAEB2;
+  --line:rgba(0,0,0,.06); --blue:#0A84FF; --blue-soft:rgba(10,132,255,.12); --green:#34C759; --orange:#FF9F0A; --red:#FF453A;
+  --glass:rgba(245,245,247,.78); --shadow:0 1px 2px rgba(0,0,0,.04),0 12px 32px -16px rgba(0,0,0,.18);
+  --font:"Inter",-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  color-scheme:dark; --bg:#000000; --card:#1C1C1E; --card2:#2C2C2E; --ink:#F5F5F7; --ink2:#98989D; --ink3:#636366;
+  --line:rgba(255,255,255,.08); --blue:#0A84FF; --blue-soft:rgba(10,132,255,.18); --glass:rgba(0,0,0,.72);
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 32px -16px rgba(0,0,0,.8);
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark; --bg:#000000; --card:#1C1C1E; --card2:#2C2C2E; --ink:#F5F5F7; --ink2:#98989D; --ink3:#636366;
+  --line:rgba(255,255,255,.08); --blue:#0A84FF; --blue-soft:rgba(10,132,255,.18); --glass:rgba(0,0,0,.72);
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 32px -16px rgba(0,0,0,.8);
+}
+html{scroll-padding-top:calc(60px + env(safe-area-inset-top,0px))}
+*,*::before,*::after{box-sizing:inherit}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;letter-spacing:-.005em}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--glass);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);z-index:40}
+button,input,select,textarea{font:inherit;color:inherit;letter-spacing:inherit}
+button{cursor:pointer;background:none;border:0;padding:0}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:8px}
+h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.025em;line-height:1.1}
+.hidden{display:none !important}
+input[type=text],input[type=password],input[type=date],select,textarea{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;width:100%;transition:box-shadow .15s}
+input:focus,select:focus,textarea:focus{outline:none;box-shadow:0 0 0 3px var(--blue-soft)}
+textarea{min-height:96px;resize:vertical}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;background:var(--blue);color:#fff;border-radius:999px;padding:11px 20px;font-weight:600;font-size:15px;transition:transform .12s,opacity .12s}
+.btn:active{transform:scale(.97)}
+.btn.ghost{background:var(--blue-soft);color:var(--blue)}
+.btn.gray{background:var(--card2);color:var(--ink)}
+.btn.red{background:transparent;color:var(--red)}
+.btn:disabled{opacity:.45;cursor:default}
+.msg{font-size:13px;color:var(--ink2);min-height:18px;margin-top:8px}
+.msg.err{color:var(--red)}
+
+/* Full-screen panels (gate + who are you) */
+.panel{min-height:100%;display:grid;place-items:center;padding:28px 20px}
+.panel-in{width:min(420px,100%);text-align:center}
+.panel h1{font-size:40px;margin-bottom:8px}
+.panel p{color:var(--ink2);margin:0 0 28px;font-size:17px}
+.who{text-align:left}
+.who h3{font-size:12px;font-weight:600;color:var(--ink2);text-transform:none;letter-spacing:.02em;margin:22px 0 8px 6px}
+.who .list{background:var(--card);border-radius:16px;overflow:hidden;box-shadow:var(--shadow)}
+.who .list button{display:flex;width:100%;text-align:left;padding:13px 16px;border-bottom:1px solid var(--line);font-size:16px;align-items:center;gap:12px;transition:background .12s}
+.who .list button:last-child{border-bottom:0}
+.who .list button:hover{background:var(--card2)}
+.av{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:600;color:#fff;flex-shrink:0;background:var(--c,#8E8E93)}
+
+/* Nav */
+.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:var(--glass);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--line)}
+.nav-in{max-width:880px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:14px}
+.nav .brand{font-weight:700;letter-spacing:-.02em;font-size:17px}
+.seg{display:inline-flex;background:var(--card2);border-radius:999px;padding:3px;margin:0 auto}
+.seg a{text-decoration:none;color:var(--ink2);padding:6px 16px;border-radius:999px;font-size:14px;font-weight:500;transition:all .15s}
+.seg a.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.nav .me{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500}
+.nav .me span{max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+main{max-width:880px;margin:0 auto;padding:40px 20px 120px}
+.hero{margin-bottom:28px}
+.hero h1{font-size:44px}
+.hero p{color:var(--ink2);font-size:18px;margin:8px 0 0;max-width:56ch}
+.banner{background:var(--card);border-radius:14px;padding:12px 16px;font-size:14px;color:var(--ink2);margin-bottom:20px;box-shadow:var(--shadow)}
+
+/* Notes */
+.composer{background:var(--card);border-radius:22px;padding:18px;box-shadow:var(--shadow);margin-bottom:28px;display:grid;gap:12px}
+.composer .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.composer select{width:auto;flex:1;min-width:200px;padding:10px 14px;border-radius:999px}
+.composer textarea{min-height:72px;border-radius:16px}
+.composer .foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.composer .foot .as{font-size:13px;color:var(--ink2);display:flex;align-items:center;gap:8px}
+.pills{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:16px;-ms-overflow-style:none;scrollbar-width:none}
+.pills::-webkit-scrollbar{display:none}
+.pill{background:var(--card);border-radius:999px;padding:7px 14px;font-size:13px;font-weight:500;white-space:nowrap;color:var(--ink2);box-shadow:var(--shadow);transition:all .12s}
+.pill.on{background:var(--ink);color:var(--bg)}
+.feed{display:grid;gap:12px}
+.note{background:var(--card);border-radius:20px;padding:16px 18px;box-shadow:var(--shadow);display:grid;gap:8px}
+.note .top{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink2)}
+.note .top b{color:var(--ink);font-weight:600}
+.note .top time{margin-left:auto;color:var(--ink3)}
+.note .task{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--blue);background:var(--blue-soft);border-radius:999px;padding:3px 10px 3px 8px;width:max-content;max-width:100%}
+.note .task .n{opacity:.7}
+.note .body{font-size:16px;line-height:1.5;white-space:pre-wrap}
+.note .del{justify-self:end;font-size:12px;color:var(--ink3)}
+.empty{text-align:center;color:var(--ink2);padding:48px 0}
+
+/* Progress */
+.rings{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:28px}
+.ring{background:var(--card);border-radius:20px;padding:16px 10px 14px;text-align:center;box-shadow:var(--shadow);transition:transform .15s;color:inherit}
+.ring:hover{transform:translateY(-2px)}
+.ring.on{box-shadow:0 0 0 2px var(--blue),var(--shadow)}
+.ring svg{width:72px;height:72px;display:block;margin:0 auto 8px}
+.ring .l{font-size:13px;font-weight:600}
+.ring .s{font-size:12px;color:var(--ink2)}
+.gtitle{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:8px 0 12px;flex-wrap:wrap}
+.gtitle h2{font-size:28px}
+.gtitle .pace{font-size:14px;color:var(--ink2)}
+.gtitle .pace b{color:var(--ink)}
+.lock{font-size:13px;color:var(--ink2);background:var(--card);border-radius:12px;padding:10px 14px;margin-bottom:14px;box-shadow:var(--shadow)}
+.sect{font-size:13px;font-weight:600;color:var(--ink2);margin:26px 0 8px 6px}
+.list{background:var(--card);border-radius:20px;overflow:hidden;box-shadow:var(--shadow)}
+.row{display:grid;grid-template-columns:26px 1fr auto;gap:14px;align-items:center;width:100%;text-align:left;padding:13px 16px;border-bottom:1px solid var(--line);transition:background .12s;color:inherit}
+.row:last-child{border-bottom:0}
+.row:hover{background:var(--card2)}
+.chk{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--ink3);display:grid;place-items:center;transition:all .15s}
+.row.done .chk{background:var(--green);border-color:var(--green)}
+.row.done .chk::after{content:"";width:5px;height:9px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg);margin-top:-2px}
+.row .t{font-size:15px;font-weight:500}
+.row.done .t{color:var(--ink2)}
+.row .m{font-size:12px;color:var(--ink3);margin-top:1px}
+.row .r{font-size:13px;color:var(--ink3);text-align:right;white-space:nowrap}
+.row .r .nn{color:var(--blue);font-weight:600}
+
+/* Sheet */
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:50;display:grid;align-items:end;justify-items:center;padding:0;animation:fade .18s}
+.sheet{background:var(--bg);width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:24px 24px 0 0;padding:14px 20px 40px;animation:up .22s cubic-bezier(.2,.8,.2,1)}
+.sheet .grab{width:38px;height:5px;border-radius:3px;background:var(--ink3);margin:0 auto 18px;opacity:.5}
+.sheet h2{font-size:26px;margin-bottom:6px}
+.sheet .num{font-size:13px;font-weight:600;color:var(--blue);margin-bottom:4px}
+.sheet .desc{color:var(--ink2);font-size:15px;margin:0 0 20px}
+.sheet .card{background:var(--card);border-radius:20px;padding:16px;box-shadow:var(--shadow);margin-bottom:14px;display:grid;gap:12px}
+.sheet .card h3{font-size:15px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:var(--card2);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:500;color:var(--ink2);transition:all .12s}
+.chip.on{background:var(--blue);color:#fff}
+.sw{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:15px}
+.switch{width:50px;height:30px;border-radius:999px;background:var(--ink3);position:relative;transition:background .2s;flex-shrink:0}
+.switch::after{content:"";position:absolute;top:2px;left:2px;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.25);transition:transform .2s}
+.switch.on{background:var(--green)}
+.switch.on::after{transform:translateX(20px)}
+.sheet .acts{display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+.sheet .state{font-size:13px;color:var(--ink2)}
+.mini{display:flex;gap:8px;align-items:flex-end}
+.mini textarea{min-height:52px;border-radius:14px}
+.snote{display:grid;gap:4px;padding:10px 0;border-top:1px solid var(--line)}
+.snote:first-of-type{border-top:0}
+.snote .w{font-size:12px;color:var(--ink2)}
+.snote .w b{color:var(--ink)}
+.snote .b{font-size:15px;white-space:pre-wrap}
+@keyframes up{from{transform:translateY(30px);opacity:.6}to{transform:none;opacity:1}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@media (min-width:700px){.sheet-bg{align-items:center;padding:20px}.sheet{border-radius:24px;padding:22px 26px 28px}.sheet .grab{display:none}}
+@media (max-width:640px){
+  .hero h1{font-size:34px}.hero p{font-size:16px}
+  .rings{grid-template-columns:repeat(5,1fr);gap:6px}.ring{padding:12px 4px 10px;border-radius:16px}.ring svg{width:52px;height:52px}.ring .s{display:none}
+  .nav .me span{display:none}
+  .seg a{padding:6px 12px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
+</style>
+</head>
+<body>
+
+<div id="gate" class="panel">
+  <div class="panel-in">
+    <h1>Quest</h1>
+    <p>Confidential to the neophyte class.</p>
+    <input id="pw" type="password" placeholder="Password" autocomplete="current-password" style="text-align:center;font-size:17px;margin-bottom:12px">
+    <button class="btn" id="unlock" style="width:100%">Continue</button>
+    <div class="msg err" id="gate-err"></div>
+  </div>
+</div>
+
+<div id="who" class="panel hidden"><div class="panel-in"><h1>Who are you?</h1><p>Your notes and logs will be signed with this name.</p><div class="who" id="who-list"></div></div></div>
+
+<div id="app" class="hidden">
+  <div class="nav"><div class="nav-in">
+    <div class="brand">Quest</div>
+    <div class="seg" id="seg"></div>
+    <button class="me" id="me-btn" title="Switch person"></button>
+  </div></div>
+  <main id="main"></main>
+</div>
+<div id="sheet-root"></div>
+
+<script>
+const CHECKPOINT=new Date(2026,10,18), FINAL=new Date(2026,11,4), CP_N=18;
+const GROUPS={
+ 1:["Thomas Patrick John Flood","Brock Ivan Getson","Emil Alexander Sogaard-Srikrishnan","Kalle Garcia-Manzano Busse"],
+ 2:["Theodore Kravis-Schulof","Oscar Aitcheson Schiff","Christo Petrov Velkin","Vedant Sharma","Chase Joseph Stefanek"],
+ 3:["Richard Duke Buchan IV","Heikki Juhani Antinpoika Ruohonen","Maxwell Jacob Mobray","Louis Carl Munger","Hugh Finley Whipple"],
+ 4:["Nathaniel Scott Madden","Aidan Andrea Colasante","Miles Lee Schwab","Noah Niknejad Gilligan"],
+ 5:["Henry Neville Brooke","Maxwell Stanley Massiah","Cameron Joseph McConnon","Morgan Ewan Riley","Francis DiCaprio Mannino"]};
+const COLORS=["#FF9F0A","#0A84FF","#34C759","#BF5AF2","#FF453A","#64D2FF","#FFD60A","#FF375F","#30D158","#5E5CE6"];
+const slug=s=>s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+const MEMBERS=[]; for(const g in GROUPS) GROUPS[g].forEach(n=>MEMBERS.push({id:slug(n),name:n,group:+g}));
+const M=id=>MEMBERS.find(m=>m.id===id);
+const short=n=>{const p=n.split(" ");return p[0]+" "+p[p.length-1];};
+const initials=n=>{const p=n.split(" ");return (p[0][0]+p[p.length-1][0]).toUpperCase();};
+const color=id=>COLORS[MEMBERS.findIndex(m=>m.id===id)%COLORS.length];
+
+const PHYSICAL=[
+ ["Civil War monument, Boston Common","Copy the inscription by former Harvard President Eliot. The Club was narrowly saved by two members of the class of 1862 in the face of the bitter division created by the war."],
+ ["North Station","Where FDR (class of 1904) once tried to get out of an entanglement with a bribe. He later wrote that he had failed because he had not tried to solve the problem, and would never do that again. Think about this."],
+ ["Massachusetts State House","Workplace of former Governors Bill Weld (1966) and Deval Patrick (1978). Devise a discrete way to pay tribute to the Club in your photograph."],
+ ["A real, live duck","Find one and take a picture with it."],
+ ["Stoughton 31","Oliver Wendell Holmes’ (class of 1861) undergraduate room."],
+ ["Harvard Stadium, sections 18 and 36","Go to both sections."],
+ ["Old Crimson article, pre‑1980","Find old copies of the Harvard Crimson (check Widener). Photocopy an article about the Club written before 1980."],
+ ["The gate with the Kitty","Find the gate at Harvard with the Kitty on it."],
+ ["Three sports facilities","Gordon Indoor Track and Tennis Center (Albert H. Gordon, 1923), Palmer Dixon Indoor Tennis Center (W. Palmer Dixon, 1932), Blodgett Pool (John W. Blodgett Jr., 1932). Visit each."],
+ ["Senator Jay D. Rockefeller IV","Find a recent article on the Senator (class of 1958)."],
+ ["The Preppy Handbook","Find a copy in which the Gashouse, Porc, and the Club are listed. Does this make you proud or ashamed?"],
+ ["Fred Gwynne’s children’s book","Class of 1951, better known as Herman Munster. Find one of his children’s books and read it aloud to each other."],
+ ["Metropolitan","Rent Whit Stillman’s (class of 1973) film and watch it together. You will be quizzed."],
+ ["Homage to the Iroquois Club","Pay homage in a creative way."],
+ ["A real ocelot","Take a picture with one. Reflect."],
+ ["A formal bow tie","Buy one if you don’t own one and learn to tie it. No clip‑ons at Club events. The Andover Shop, 22 Holyoke Street, should be accommodating if you mention your election."],
+ ["Coolidge Room, Randolph Hall, Adams House","Named for Archibald Cary Coolidge (1887), first Director of the Harvard University Library and planner of Widener. Look out toward the clubhouse across the street and take a photograph together."],
+ ["Phillips Brooks House","In recognition of the legacy of public service left by this member. Think about this."],
+ ["Ten Thousand Men of Harvard","Find the lyrics. Memorize them."],
+ ["Lowell House","Honor former Harvard President A. Lawrence Lowell (1877) and the entire Lowell family, most of whom were members."],
+ ["A croissant from a French bakery","Louis Kane’s (1953) infatuation with the croissant turned a wacky idea into Au Bon Pain."],
+ ["World War I Memorial Room, Memorial Church","Find Lionel de Jersey (1915), the only direct descendant of John Harvard to attend the college. Pay your respects and read President Lowell’s inscription along the top of the walls."],
+ ["Honor Teddy Roosevelt","Class of 1880. Do it creatively. One of his greatest achievements, apart from the Presidency: the Cuba Libre, while fighting in Cuba with the Rough Riders."],
+ ["Fogg Art Museum","As a group, agree on your favorite painting. Bonus points if a member donated it."],
+ ["Know your group","Full names, hometowns, and high schools of everyone in your group, then the whole class. You will be quizzed."],
+ ["A bottle of Bordeaux","Pick one you all fancy and savor it together. Reflect on Eric Vogt (1970) and his decades educating brothers on wine. Know basic facts about the bottle."],
+ ["Isabella Stewart Gardner Museum","After Joseph Peabody Gardner died in 1875, the Gardners adopted his three sons, all future members (Joseph Jr. ’82, William Amory ’84, Augustus Peabody ’86). Find Sargent’s El Jaleo on the first floor, purchased by Thomas Jefferson Coolidge Jr. ’84 and donated in 1914."],
+ ["Dinner together as a class","Everyone must attend. Tip well."],
+ ["Edward Everett Hale statue, Public Garden","Class of 1839. Read The Man Without a Country and choose a passage to go beside your photograph in the album."],
+ ["James Russell Lowell’s grave, Mount Auburn","Class of 1838. Pay your respects and learn something about his life beyond his poetry for the album."],
+ ["Play tennis together","For Dwight Davis (1900), who helped establish and donated the trophy for the Davis Cup, first held at Longwood Cricket Club in 1900. Document your meeting on the court."],
+ ["FDR and Lathrop Brown’s rooms, Westmorly Court","Both class of 1904; now part of Adams House. You may need to book a tour in advance. Bring back a detail that surprised your group."],
+ ["Matthew S. Abramson bench, Lowell House","Class of 1996. Look beneath it for the inscribed names of his brothers. Take a moment together to remember Matt."],
+ ["A graduate member’s photograph","Ask a graduate from a class before 2010 to share a photo from his undergraduate years and the story behind it. With permission, include both in your album."],
+ ["A gift to the Club","An artifact, photograph, document, sculpture, or work of art connected to the Club. Needn’t be expensive; must be thoughtful. Learn its history and explain why it belongs."],
+ ["A faithful friend is the medicine of life","Interpret this as a group and document it."]
+].map((t,i)=>({id:"p"+(i+1),n:i+1,title:t[0],desc:t[1],scope:"physical"}));
+const INTELLECTUAL=[
+ ["President’s written approval","Needed before the group can access the archives at Houghton."],
+ ["Research at Houghton","Research the Club’s history in the reading room. Findings are presented at the President’s Lunch."],
+ ["Graduate call 1","Call a graduate member and learn an anecdote from the Club’s past."],
+ ["Graduate call 2","A second graduate and anecdote."],
+ ["Graduate call 3","A third graduate and anecdote."],
+ ["A mythical story or poem about the Kitty","Be creative. Entertain and educate present members."],
+ ["Present at the President’s Lunch","Present the group’s findings."]
+].map((t,i)=>({id:"i"+(i+1),n:i+1,title:t[0],desc:t[1],scope:"intellectual"}));
+const TASKS=[...PHYSICAL,...INTELLECTUAL];
+const T=id=>TASKS.find(t=>t.id===id);
+const label=t=>(t.scope==="physical"?t.n:"IQ "+t.n);
+
+/* storage (Netlify Function + Netlify Blobs) */
+const store={ok:false,key:"",canWrite:null,timer:null,
+ async req(method,path,body){
+  const r=await fetch("/api/"+path,{method,headers:{"content-type":"application/json","x-quest-key":this.key},body:body?JSON.stringify(body):undefined});
+  if(r.status===401) throw {code:"unauthorized"};
+  if(!r.ok) throw {code:"http_"+r.status};
+  return r.status===204?null:r.json();
+ },
+ async connect(on){
+  const pull=async()=>{try{const s=await this.req("GET","state");this.ok=true;on("state",s);}catch(e){on("error",e);}};
+  await pull();
+  const loop=()=>{this.timer=setTimeout(async()=>{if(document.visibilityState==="visible")await pull();loop();},12000);};
+  loop(); document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")pull();});
+  this.refresh=pull; return "";
+ },
+ setLog(k,data){return this.req("PUT","logs/"+k,data).then(()=>this.refresh());},
+ addNote(data){return this.req("POST","notes",data).then(()=>this.refresh());},
+ delNote(id){return this.req("DELETE","notes/"+id,{by:me}).then(()=>this.refresh());}};
+
+let logs={},notes={},loaded=false,banner="";
+let me=localStorage.getItem("ql_me")||"";
+let route=location.hash.replace("#","")||"notes", viewGroup=null, filter="all", sheet=null;
+const myGroup=()=>M(me)?.group||null;
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+const key=(g,t)=>g+"_"+t;
+const stats=g=>({done:PHYSICAL.filter(t=>logs[key(g,t.id)]?.done).length,intel:INTELLECTUAL.filter(t=>logs[key(g,t.id)]?.done).length});
+const notesFor=tid=>Object.entries(notes).map(([id,n])=>({...n,id})).filter(n=>n.taskId===tid).sort((a,b)=>(b.createdAt||"").localeCompare(a.createdAt||""));
+const days=d=>Math.ceil((d-new Date())/86400000);
+const fmt=s=>{if(!s)return"";const d=new Date(s.length===10?s+"T12:00":s);return isNaN(d)?s:d.toLocaleDateString(undefined,{month:"short",day:"numeric"});};
+const errMsg=e=>e&&e.code==="unauthorized"?"Password changed. Reload and sign in again.":"Couldn’t save. Try again in a moment.";
+
+/* gate */
+async function unlock(){
+  const b=document.getElementById("unlock"),err=document.getElementById("gate-err"); b.disabled=true; err.textContent="";
+  store.key=document.getElementById("pw").value;
+  try{ await store.req("GET","state"); try{sessionStorage.setItem("ql_key",store.key)}catch(e){} boot(); }
+  catch(e){ err.textContent=e.code==="unauthorized"?"That’s not it.":"Can’t reach the server. Try again."; }
+  b.disabled=false;
+}
+document.getElementById("unlock").onclick=unlock;
+document.getElementById("pw").addEventListener("keydown",e=>{if(e.key==="Enter")unlock();});
+try{ const k=sessionStorage.getItem("ql_key"); if(k){store.key=k;boot();} }catch(e){}
+
+let booted=false;
+function boot(){
+  if(booted)return; booted=true;
+  document.getElementById("gate").classList.add("hidden");
+  if(!M(me)) showWho(); else showApp();
+  store.connect((c,s)=>{ if(c==="error"){ if(s.code==="unauthorized"){try{sessionStorage.removeItem("ql_key")}catch(e){} location.reload(); return;} banner="Can’t reach the server right now; showing what was last loaded."; render(); return;}
+    logs=s.logs||{}; notes=s.notes||{}; loaded=true; banner=""; render(); });
+  window.addEventListener("hashchange",()=>{route=location.hash.replace("#","")||"notes";render();});
+}
+function showWho(){
+  document.getElementById("app").classList.add("hidden");
+  const w=document.getElementById("who"); w.classList.remove("hidden");
+  document.getElementById("who-list").innerHTML=Object.keys(GROUPS).map(g=>'<h3>Group '+g+'</h3><div class="list">'+GROUPS[g].map(n=>'<button data-pick="'+slug(n)+'"><span class="av" style="--c:'+color(slug(n))+'">'+initials(n)+'</span>'+esc(n)+'</button>').join("")+'</div>').join("");
+  w.querySelectorAll("[data-pick]").forEach(b=>b.onclick=()=>{me=b.dataset.pick;localStorage.setItem("ql_me",me);viewGroup=null;showApp();});
+}
+function showApp(){ document.getElementById("who").classList.add("hidden"); document.getElementById("app").classList.remove("hidden"); render(); }
+
+/* render */
+function render(){
+  if(!M(me)) return;
+  document.getElementById("seg").innerHTML='<a href="#notes" class="'+(route==="notes"?"on":"")+'">Notes</a><a href="#progress" class="'+(route==="progress"?"on":"")+'">Progress</a>';
+  const mb=document.getElementById("me-btn"); mb.innerHTML='<span class="av" style="--c:'+color(me)+'">'+initials(M(me).name)+'</span><span>'+esc(short(M(me).name))+'</span>'; mb.onclick=showWho;
+  let h=banner?'<div class="banner">'+esc(banner)+'</div>':"";
+  h+=route==="progress"?viewProgress():viewNotes();
+  document.getElementById("main").innerHTML=h; wire();
+  if(sheet) renderSheet();
+}
+function taskOptions(sel){const grp=(l,a)=>'<optgroup label="'+l+'">'+a.map(t=>'<option value="'+t.id+'"'+(t.id===sel?" selected":"")+'>'+label(t)+'. '+esc(t.title)+'</option>').join("")+'</optgroup>';return grp("Physical Quest",PHYSICAL)+grp("Intellectual Quest",INTELLECTUAL);}
+
+function viewNotes(){
+  let list=Object.entries(notes).map(([id,n])=>({...n,id})).sort((a,b)=>(b.createdAt||"").localeCompare(a.createdAt||""));
+  if(filter==="mine") list=list.filter(n=>n.by===me); else if(filter==="group") list=list.filter(n=>M(n.by)?.group===myGroup()); else if(filter==="intel") list=list.filter(n=>n.taskId.startsWith("i"));
+  const m=M(me);
+  let h='<div class="hero"><h1>Notes.</h1><p>Everything the class has figured out, task by task. Where the duck is. Who to call for the tour. Which Bordeaux was worth it.</p></div>';
+  h+='<div class="composer"><div class="row"><select id="nc-task"><option value="">Which task is this about?</option>'+taskOptions("")+'</select></div><textarea id="nc-text" placeholder="Write a note for everyone…"></textarea><div class="foot"><div class="as"><span class="av" style="--c:'+color(me)+';width:22px;height:22px;font-size:10px">'+initials(m.name)+'</span>Posting as '+esc(short(m.name))+', Group '+m.group+'</div><button class="btn" id="nc-save">Post</button></div><div class="msg" id="nc-msg"></div></div>';
+  h+='<div class="pills">'+[["all","All notes"],["group","My group"],["mine","Mine"],["intel","Intellectual Quest"]].map(([k,l])=>'<button class="pill'+(filter===k?" on":"")+'" data-filter="'+k+'">'+l+'</button>').join("")+'</div>';
+  h+='<div class="feed">'+(list.length?list.map(noteCard).join(""):'<div class="empty">'+(Object.keys(notes).length?"Nothing here.":"No notes yet. Yours would be the first.")+'</div>')+'</div>';
+  return h;
+}
+function noteCard(n){
+  const t=T(n.taskId)||{title:n.taskId,scope:"physical",n:"?"}; const w=M(n.by);
+  return '<div class="note"><div class="top">'+(w?'<span class="av" style="--c:'+color(n.by)+';width:24px;height:24px;font-size:10px">'+initials(w.name)+'</span><b>'+esc(short(w.name))+'</b><span>Group '+w.group+'</span>':'<b>Unsigned</b>')+'<time>'+fmt(n.createdAt)+'</time></div>'+
+   '<button class="task" data-open="'+esc(n.taskId)+'" data-g="'+(w?w.group:"")+'"><span class="n">'+label(t)+'</span>'+esc(t.title)+'</button><div class="body">'+esc(n.text)+'</div>'+(n.by===me?'<button class="del" data-del="'+n.id+'">Delete</button>':"")+'</div>';
+}
+
+function ringSVG(done,total,on){
+  const r=30,c=2*Math.PI*r,p=done/total,cp=CP_N/total;
+  return '<svg viewBox="0 0 72 72"><circle cx="36" cy="36" r="'+r+'" fill="none" stroke="var(--line)" stroke-width="7"/>'+
+   '<circle cx="36" cy="36" r="'+r+'" fill="none" stroke="'+(on?"var(--blue)":"var(--green)")+'" stroke-width="7" stroke-linecap="round" stroke-dasharray="'+(c*p)+' '+c+'" transform="rotate(-90 36 36)" style="transition:stroke-dasharray .6s cubic-bezier(.2,.8,.2,1)"/>'+
+   '<line x1="36" y1="2" x2="36" y2="10" stroke="var(--ink3)" stroke-width="2" transform="rotate('+(360*cp)+' 36 36)"/>'+
+   '<text x="36" y="41" text-anchor="middle" font-size="17" font-weight="700" fill="currentColor">'+done+'</text></svg>';
+}
+function viewProgress(){
+  const g=viewGroup||myGroup()||1, s=stats(g), mine=g===myGroup(), dc=days(CHECKPOINT), df=days(FINAL);
+  let h='<div class="hero"><h1>Progress.</h1><p>Any 18 physical tasks by November 18. The album the night before the President’s Lunch on December 4.</p></div>';
+  h+='<div class="rings">'+Object.keys(GROUPS).map(k=>{const st=stats(+k);return '<button class="ring'+(+k===g?" on":"")+'" data-group="'+k+'">'+ringSVG(st.done,36,+k===myGroup())+'<div class="l">Group '+k+'</div><div class="s">'+st.done+' of 36</div></button>';}).join("")+'</div>';
+  const need=Math.max(CP_N-s.done,0);
+  h+='<div class="gtitle"><h2>Group '+g+(mine?" · yours":"")+'</h2><div class="pace">'+(dc>0?(need?'<b>'+need+' more</b> in '+dc+' day'+(dc===1?"":"s")+' to make the checkpoint':'<b>Checkpoint made.</b> '+df+' days to the lunch'):'<b>'+(36-s.done)+' left</b> · '+Math.max(df,0)+' days to the lunch')+'</div></div>';
+  if(!mine) h+='<div class="lock">You’re viewing Group '+g+'. Only its members can log tasks here; you can still read and add notes.</div>';
+  const sect=(title,arr)=>'<div class="sect">'+title+'</div><div class="list">'+arr.map(t=>{const l=logs[key(g,t.id)]||{};const nn=notesFor(t.id).length;const r=[];if(nn)r.push('<span class="nn">'+nn+' note'+(nn===1?"":"s")+'</span>');if(l.done)r.push(fmt(l.date)+(l.photo?" · photo":""));
+    return '<button class="row'+(l.done?" done":"")+'" data-open="'+t.id+'" data-g="'+g+'"><span class="chk"></span><span><div class="t">'+label(t)+'. '+esc(t.title)+'</div>'+(l.done&&l.by?.length?'<div class="m">'+l.by.map(id=>M(id)?short(M(id).name).split(" ")[0]:"").filter(Boolean).join(", ")+'</div>':"")+'</span><span class="r">'+r.join("<br>")+'</span></button>';}).join("")+'</div>';
+  h+=sect("Physical Quest · "+s.done+" of 36",PHYSICAL)+sect("Intellectual Quest · "+s.intel+" of "+INTELLECTUAL.length,INTELLECTUAL);
+  return h;
+}
+
+/* sheet */
+function openSheet(tid,g){ sheet={tid,g:+g||myGroup()||1}; renderSheet(); }
+function closeSheet(){ sheet=null; document.getElementById("sheet-root").innerHTML=""; }
+function renderSheet(){
+  const t=T(sheet.tid); if(!t){closeSheet();return;}
+  const g=sheet.g, l=logs[key(g,t.id)]||{}, mine=g===myGroup(), nn=notesFor(t.id);
+  const by=new Set(l.by||(mine?[me]:[]));
+  let h='<div class="sheet-bg" data-bg><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div><div class="num">'+(t.scope==="physical"?"Task "+t.n:"Intellectual Quest "+t.n)+' · Group '+g+'</div><h2>'+esc(t.title)+'</h2><p class="desc">'+esc(t.desc)+'</p>';
+  h+='<div class="card"><h3>Notes'+(nn.length?" · "+nn.length:"")+'</h3>'+(nn.length?nn.map(n=>{const w=M(n.by);return '<div class="snote"><div class="w"><b>'+(w?esc(short(w.name)):"Unsigned")+'</b>'+(w?" · Group "+w.group:"")+' · '+fmt(n.createdAt)+'</div><div class="b">'+esc(n.text)+'</div></div>';}).join(""):'<div class="state">No notes on this one yet.</div>')+
+     '<div class="mini"><textarea id="s-note" placeholder="Add a note as '+esc(short(M(me).name))+'…"></textarea><button class="btn" id="s-post">Post</button></div><div class="msg" id="s-msg"></div></div>';
+  if(mine){
+    h+='<div class="card"><h3>'+(l.done?"Logged":"Log it")+'</h3><div><div class="state" style="margin-bottom:6px">Who was there</div><div class="chips">'+GROUPS[g].map(n=>'<button class="chip'+(by.has(slug(n))?" on":"")+'" data-chip="'+slug(n)+'">'+esc(short(n).split(" ")[0])+'</button>').join("")+'</div></div>'+
+       '<div class="sw"><span>Photographed (black &amp; white, coat &amp; tie)</span><button class="switch'+(l.photo?" on":"")+'" id="s-photo" role="switch" aria-checked="'+!!l.photo+'"></button></div>'+
+       '<input type="date" id="s-date" value="'+esc(l.date||"")+'"><textarea id="s-cap" placeholder="Album caption (optional)">'+esc(l.notes||"")+'</textarea>'+
+       '<div class="acts"><div>'+(l.done?'<button class="btn gray" id="s-save">Update</button> <button class="btn red" id="s-clear">Clear</button>':'<button class="btn" id="s-save">Mark complete</button>')+'</div><div class="state">'+(l.updatedAt?"Saved "+fmt(l.updatedAt)+(M(l.updatedBy)?" by "+esc(short(M(l.updatedBy).name).split(" ")[0]):""):"")+'</div></div><div class="msg" id="s-err"></div></div>';
+  } else {
+    h+='<div class="card"><h3>Group '+g+'’s log</h3><div class="state">'+(l.done?"Completed "+fmt(l.date)+(l.photo?", photographed":"")+(l.by?.length?" · "+l.by.map(id=>M(id)?short(M(id).name).split(" ")[0]:"").join(", "):"")+(l.notes?'<br>“'+esc(l.notes)+'”':""):"Not logged yet.")+'</div><div class="state">Only Group '+g+' can change this.</div></div>';
+  }
+  h+='</div></div>';
+  const root=document.getElementById("sheet-root"); root.innerHTML=h;
+  root.querySelector("[data-bg]").onclick=e=>{if(e.target.hasAttribute("data-bg"))closeSheet();};
+  root.querySelectorAll("[data-chip]").forEach(c=>c.onclick=()=>c.classList.toggle("on"));
+  const sw=root.querySelector("#s-photo"); if(sw) sw.onclick=()=>{sw.classList.toggle("on");sw.setAttribute("aria-checked",sw.classList.contains("on"));};
+  root.querySelector("#s-post").onclick=async()=>{const ta=root.querySelector("#s-note"),msg=root.querySelector("#s-msg");const ok=await postNote(t.id,ta.value.trim(),msg);if(ok)ta.value="";};
+  root.querySelector("#s-note").onkeydown=e=>{if((e.metaKey||e.ctrlKey)&&e.key==="Enter")root.querySelector("#s-post").click();};
+  const save=root.querySelector("#s-save"); if(save) save.onclick=()=>saveLog(root,t,g,"done");
+  const clr=root.querySelector("#s-clear"); if(clr) clr.onclick=()=>{if(confirm("Clear this log for Group "+g+"?"))saveLog(root,t,g,"clear");};
+}
+async function saveLog(root,t,g,mode){
+  if(g!==myGroup()) return;
+  const err=root.querySelector("#s-err"); if(!store.ok){err.textContent="Not connected yet. Try again in a moment.";err.classList.add("err");return;}
+  const data={group:g,taskId:t.id,done:mode==="done",by:[...root.querySelectorAll(".chip.on")].map(c=>c.dataset.chip),date:root.querySelector("#s-date").value||new Date().toISOString().slice(0,10),photo:root.querySelector("#s-photo").classList.contains("on"),notes:root.querySelector("#s-cap").value.trim(),updatedBy:me,updatedAt:new Date().toISOString()};
+  try{ await store.setLog(key(g,t.id),data); closeSheet(); }catch(e){err.textContent=errMsg(e);err.classList.add("err");}
+}
+async function postNote(tid,text,msg){
+  msg.className="msg err";
+  if(!tid){msg.textContent="Pick a task first.";return false;}
+  if(!text){msg.textContent="Write something first.";return false;}
+  if(!store.ok){msg.textContent="Not connected yet. Try again in a moment.";return false;}
+  try{ await store.addNote({taskId:tid,text,by:me,group:myGroup()}); msg.className="msg"; msg.textContent="Posted."; return true; }
+  catch(e){msg.textContent=errMsg(e);return false;}
+}
+function wire(){
+  const nc=document.getElementById("nc-save"); if(nc) nc.onclick=async()=>{nc.disabled=true;const ok=await postNote(document.getElementById("nc-task").value,document.getElementById("nc-text").value.trim(),document.getElementById("nc-msg"));nc.disabled=false;if(ok)document.getElementById("nc-text").value="";};
+  document.querySelectorAll("[data-filter]").forEach(b=>b.onclick=()=>{filter=b.dataset.filter;render();});
+  document.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>openSheet(b.dataset.open,b.dataset.g));
+  document.querySelectorAll("[data-group]").forEach(b=>b.onclick=()=>{viewGroup=+b.dataset.group;render();});
+  document.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{if(!store.ok||!confirm("Delete this note?"))return;try{await store.delNote(b.dataset.del);}catch(e){alert(errMsg(e));}});
+}
+</script>
+</body>
+</html>
