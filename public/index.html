@@ -265,13 +265,13 @@ const store={ok:false,key:"",canWrite:null,timer:null,
   await pull();
   const loop=()=>{this.timer=setTimeout(async()=>{if(document.visibilityState==="visible")await pull();loop();},12000);};
   loop(); document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")pull();});
-  this.refresh=pull; return "";
+  this.refresh=async()=>{await pull();render(true);}; return "";
  },
  setLog(k,data){return this.req("PUT","logs/"+k,data).then(()=>this.refresh());},
  addNote(data){return this.req("POST","notes",data).then(()=>this.refresh());},
  delNote(id){return this.req("DELETE","notes/"+id,{by:me}).then(()=>this.refresh());}};
 
-let logs={},notes={},loaded=false,banner="";
+let logs={},notes={},loaded=false,banner="",lastSig="",pendingRender=false;
 let me=localStorage.getItem("ql_me")||"";
 let route=location.hash.replace("#","")||"notes", viewGroup=null, filter="all", sheet=null;
 const myGroup=()=>M(me)?.group||null;
@@ -300,9 +300,11 @@ function boot(){
   if(booted)return; booted=true;
   document.getElementById("gate").classList.add("hidden");
   if(!M(me)) showWho(); else showApp();
-  store.connect((c,s)=>{ if(c==="error"){ if(s.code==="unauthorized"){try{sessionStorage.removeItem("ql_key")}catch(e){} location.reload(); return;} banner="Can’t reach the server right now; showing what was last loaded."; render(); return;}
-    logs=s.logs||{}; notes=s.notes||{}; loaded=true; banner=""; render(); });
-  window.addEventListener("hashchange",()=>{route=location.hash.replace("#","")||"notes";render();});
+  store.connect((c,s)=>{ if(c==="error"){ if(s.code==="unauthorized"){try{sessionStorage.removeItem("ql_key")}catch(e){} location.reload(); return;} if(!banner){banner="Can’t reach the server right now; showing what was last loaded."; render();} return;}
+    const sig=JSON.stringify(s); const changed=sig!==lastSig; lastSig=sig;
+    logs=s.logs||{}; notes=s.notes||{}; loaded=true; const hadBanner=!!banner; banner="";
+    if(changed||hadBanner) render(); });
+  window.addEventListener("hashchange",()=>{route=location.hash.replace("#","")||"notes";render(true);});
 }
 function showWho(){
   document.getElementById("app").classList.add("hidden");
@@ -313,13 +315,19 @@ function showWho(){
 function showApp(){ document.getElementById("who").classList.add("hidden"); document.getElementById("app").classList.remove("hidden"); render(); }
 
 /* render */
-function render(){
+function typing(){const a=document.activeElement;return !!(a&&/^(TEXTAREA|INPUT|SELECT)$/.test(a.tagName)&&(document.getElementById("main").contains(a)||document.getElementById("sheet-root").contains(a)));}
+document.addEventListener("focusout",()=>{ if(pendingRender){ setTimeout(()=>{ if(pendingRender&&!typing()){pendingRender=false;render();} },150);} });
+function render(force){
   if(!M(me)) return;
+  if(!force&&typing()){pendingRender=true;return;}
+  const keep={task:document.getElementById("nc-task")?.value,text:document.getElementById("nc-text")?.value};
   document.getElementById("seg").innerHTML='<a href="#notes" class="'+(route==="notes"?"on":"")+'">Notes</a><a href="#progress" class="'+(route==="progress"?"on":"")+'">Progress</a>';
   const mb=document.getElementById("me-btn"); mb.innerHTML='<span class="av" style="--c:'+color(me)+'">'+initials(M(me).name)+'</span><span>'+esc(short(M(me).name))+'</span>'; mb.onclick=showWho;
   let h=banner?'<div class="banner">'+esc(banner)+'</div>':"";
   h+=route==="progress"?viewProgress():viewNotes();
   document.getElementById("main").innerHTML=h; wire();
+  if(keep.text){const t=document.getElementById("nc-text");if(t)t.value=keep.text;}
+  if(keep.task){const t=document.getElementById("nc-task");if(t)t.value=keep.task;}
   if(sheet) renderSheet();
 }
 function taskOptions(sel){const grp=(l,a)=>'<optgroup label="'+l+'">'+a.map(t=>'<option value="'+t.id+'"'+(t.id===sel?" selected":"")+'>'+label(t)+'. '+esc(t.title)+'</option>').join("")+'</optgroup>';return grp("Physical Quest",PHYSICAL)+grp("Intellectual Quest",INTELLECTUAL);}
@@ -379,7 +387,8 @@ function renderSheet(){
     h+='<div class="card"><h3>Group '+g+'’s log</h3><div class="state">'+(l.done?"Completed "+fmt(l.date)+(l.photo?", photographed":"")+(l.by?.length?" · "+l.by.map(id=>M(id)?short(M(id).name).split(" ")[0]:"").join(", "):"")+(l.notes?'<br>“'+esc(l.notes)+'”':""):"Not logged yet.")+'</div><div class="state">Only Group '+g+' can change this.</div></div>';
   }
   h+='</div></div>';
-  const root=document.getElementById("sheet-root"); root.innerHTML=h;
+  const root=document.getElementById("sheet-root"); const keepNote=root.querySelector("#s-note")?.value||"", keepCap=root.querySelector("#s-cap")?.value; root.innerHTML=h;
+  if(keepNote){root.querySelector("#s-note").value=keepNote;} if(keepCap!==undefined&&root.querySelector("#s-cap")){root.querySelector("#s-cap").value=keepCap;}
   root.querySelector("[data-bg]").onclick=e=>{if(e.target.hasAttribute("data-bg"))closeSheet();};
   root.querySelectorAll("[data-chip]").forEach(c=>c.onclick=()=>c.classList.toggle("on"));
   const sw=root.querySelector("#s-photo"); if(sw) sw.onclick=()=>{sw.classList.toggle("on");sw.setAttribute("aria-checked",sw.classList.contains("on"));};
@@ -404,9 +413,9 @@ async function postNote(tid,text,msg){
 }
 function wire(){
   const nc=document.getElementById("nc-save"); if(nc) nc.onclick=async()=>{nc.disabled=true;const ok=await postNote(document.getElementById("nc-task").value,document.getElementById("nc-text").value.trim(),document.getElementById("nc-msg"));nc.disabled=false;if(ok)document.getElementById("nc-text").value="";};
-  document.querySelectorAll("[data-filter]").forEach(b=>b.onclick=()=>{filter=b.dataset.filter;render();});
+  document.querySelectorAll("[data-filter]").forEach(b=>b.onclick=()=>{filter=b.dataset.filter;render(true);});
   document.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>openSheet(b.dataset.open,b.dataset.g));
-  document.querySelectorAll("[data-group]").forEach(b=>b.onclick=()=>{viewGroup=+b.dataset.group;render();});
+  document.querySelectorAll("[data-group]").forEach(b=>b.onclick=()=>{viewGroup=+b.dataset.group;render(true);});
   document.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{if(!store.ok||!confirm("Delete this note?"))return;try{await store.delNote(b.dataset.del);}catch(e){alert(errMsg(e));}});
 }
 </script>

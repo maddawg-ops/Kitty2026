@@ -875,7 +875,7 @@ var api_src_default = async (req) => {
   if (req.headers.get("x-quest-key") !== password) return json({ error: "unauthorized" }, 401);
   const url = new URL(req.url);
   const parts = url.pathname.replace(/^\/api\/?/, "").split("/").filter(Boolean);
-  const store = getStore("quest");
+  const store = getStore({ name: "quest", consistency: "strong" });
   try {
     if (req.method === "GET" && parts[0] === "state") {
       const [notesList, logsList] = await Promise.all([store.list({ prefix: "note:" }), store.list({ prefix: "log:" })]);
